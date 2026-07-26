@@ -10,6 +10,7 @@ Failure is forced with a nonexistent weather file path -- deterministic,
 no fragile IDF corruption needed.
 """
 import importlib.util
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -26,9 +27,9 @@ spec = importlib.util.spec_from_file_location(
 loop_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(loop_module)
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
-TEST_DIR = Path("D:/Honeywell-env/rollback_retry_test")
+TEST_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1")).parent / "rollback_retry_test"
 CURRENT_IDF = TEST_DIR / "ai_current.idf"
 LAST_KNOWN_GOOD_IDF = TEST_DIR / "ai_last_known_good.idf"
 OUT_DIR = TEST_DIR / "chunk_out"

@@ -13,6 +13,7 @@ since all three real proposals turned out to be rejects -- worth also
 proving the accept and clamp paths work, which the real data didn't
 happen to exercise.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -24,8 +25,8 @@ from supervisory_hvac.llm_reasoning import Proposal  # noqa: E402
 from supervisory_hvac.metrics import average_pmv  # noqa: E402
 from supervisory_hvac.validation import RejectedAction, ValidatedAction, validate_proposal  # noqa: E402
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
-RUN_DIR = Path("D:/Honeywell-env/run1")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
 BASELINE_IDF = RUN_DIR / "baseline.idf"
 CHUNKS_DIR = RUN_DIR / "chunks"

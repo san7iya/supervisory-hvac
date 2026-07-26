@@ -27,6 +27,23 @@ load_dotenv()
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "ollama")  # "ollama" (default) or "groq" (fallback)
 REQUEST_TIMEOUT_S = 60
 
+# Matches eplus_runner's MAX_ENERGYPLUS_RETRIES=3 for consistency. Backoff is a
+# short fixed-step exponential (2s, 4s) between the 3 attempts -- nothing
+# elaborate, just enough to ride out a blip.
+MAX_LLM_RETRIES = 3
+LLM_RETRY_BACKOFF_BASE_S = 2
+
+# failure_type values for RejectedProposal, so run.log/log_parser.py can tell
+# these apart instead of everything collapsing into one generic reason string.
+FAILURE_TRANSIENT_NETWORK = "transient_network"    # timeout/connection/5xx, retries exhausted
+FAILURE_NON_TRANSIENT_4XX = "non_transient_4xx"    # genuine bad-request (bad payload, oversized context, ...)
+FAILURE_TOOL_CALL_MALFORMED = "tool_call_malformed"  # provider-side 400 for a malformed tool-call generation
+                                                      # (observed as Groq's error.code == "tool_use_failed")
+FAILURE_CONFIG_ERROR = "config_error"              # e.g. GROQ_API_KEY not set -- never reached the network
+FAILURE_SCHEMA_INVALID = "schema_invalid"          # pre-existing Milestone 4 case: no/bad tool call in an
+                                                    # otherwise-successful response; default for RejectedProposal
+                                                    # since every such call site below predates this field
+
 OLLAMA_HOST = "http://localhost:11434"
 OLLAMA_MODEL = "qwen2.5:7b-instruct-q4_K_M"
 
@@ -100,6 +117,7 @@ class Proposal:
 class RejectedProposal:
     reason: str
     raw_response: Any
+    failure_type: str = FAILURE_SCHEMA_INVALID
 
 
 def _validate_arguments(args: dict) -> Proposal:
@@ -155,6 +173,53 @@ def _chat_groq(messages: list) -> dict:
     return data["choices"][0].get("message", {})
 
 
+def _is_transient_llm_error(e: Exception) -> bool:
+    """True only for connection errors, timeouts, and 5xx-style server
+    errors -- the failure classes retrying can actually fix. False for
+    everything else, in particular 4xx HTTPError (schema-invalid request,
+    e.g. a malformed message or context-length-exceeded) and RuntimeError
+    (missing GROQ_API_KEY): retrying those just reproduces the same failure,
+    since the problem is in the payload/config, not the network. Confirmed
+    directly against Groq's API: an invalid message role and an oversized
+    prompt both come back as 400 invalid_request_error, not a transient
+    server condition -- see docs/architecture-notes.md."""
+    if isinstance(e, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+        return True
+    if isinstance(e, requests.exceptions.HTTPError):
+        status = e.response.status_code if e.response is not None else None
+        return status is not None and 500 <= status < 600
+    return False
+
+
+def _classify_llm_failure_type(e: Exception) -> str:
+    """Distinguishes request-level failures for logging only -- doesn't
+    affect the retry decision (that's still _is_transient_llm_error).
+    Separated from a genuine bad-request 4xx is Groq's tool_use_failed:
+    the model malformed its own function-call syntax (garbled/duplicated
+    <function=...> generation), which Groq surfaces as a 400 with
+    error.code == "tool_use_failed" -- confirmed by inspecting a real
+    occurrence's response body. That's a model-generation defect, not a
+    payload defect, so it gets its own bucket rather than being lumped
+    into "non_transient_4xx"."""
+    if isinstance(e, RuntimeError):
+        return FAILURE_CONFIG_ERROR
+    if isinstance(e, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+        return FAILURE_TRANSIENT_NETWORK
+    if isinstance(e, requests.exceptions.HTTPError):
+        status = e.response.status_code if e.response is not None else None
+        if status is not None and 500 <= status < 600:
+            return FAILURE_TRANSIENT_NETWORK
+        if e.response is not None:
+            try:
+                code = e.response.json().get("error", {}).get("code")
+            except ValueError:
+                code = None
+            if code == "tool_use_failed":
+                return FAILURE_TOOL_CALL_MALFORMED
+        return FAILURE_NON_TRANSIENT_4XX
+    return FAILURE_NON_TRANSIENT_4XX
+
+
 def propose_setpoint_adjustment(window_summary: str) -> Union[Proposal, RejectedProposal]:
     """Ask the configured provider (LLM_PROVIDER) to reason over window_summary
     and return a structured proposal via native tool-calling. Never
@@ -191,13 +256,26 @@ def propose_setpoint_adjustment(window_summary: str) -> Union[Proposal, Rejected
         {"role": "user", "content": window_summary},
     ]
 
-    try:
-        if LLM_PROVIDER == "groq":
-            message = _chat_groq(messages)
-        else:
-            message = _chat_ollama(messages)
-    except (requests.RequestException, RuntimeError) as e:
-        return RejectedProposal(reason=f"request to {LLM_PROVIDER} failed: {e}", raw_response=None)
+    message = None
+    for attempt in range(1, MAX_LLM_RETRIES + 1):
+        try:
+            if LLM_PROVIDER == "groq":
+                message = _chat_groq(messages)
+            else:
+                message = _chat_ollama(messages)
+            break
+        except (requests.RequestException, RuntimeError) as e:
+            if attempt < MAX_LLM_RETRIES and _is_transient_llm_error(e):
+                delay = LLM_RETRY_BACKOFF_BASE_S * attempt
+                print(f"[LLM_RETRY] {LLM_PROVIDER} call failed (attempt {attempt}/{MAX_LLM_RETRIES}): {e} "
+                      f"-- retrying in {delay}s")
+                time.sleep(delay)
+                continue
+            failure_type = _classify_llm_failure_type(e)
+            print(f"[LLM_REQUEST_FAILED] provider={LLM_PROVIDER} failure_type={failure_type} reason={e}")
+            return RejectedProposal(
+                reason=f"request to {LLM_PROVIDER} failed: {e}", raw_response=None, failure_type=failure_type
+            )
 
     tool_calls = message.get("tool_calls") or []
     if not tool_calls:

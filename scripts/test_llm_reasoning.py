@@ -5,6 +5,7 @@ no whitelisting, no IDF application. This only proves the model can reliably
 produce a structured decision object (or a clean, explicit rejection) from
 real chunk metrics.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -13,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from supervisory_hvac.llm_reasoning import Proposal, RejectedProposal, propose_setpoint_adjustment  # noqa: E402
 from supervisory_hvac.window_summary import summarize_chunks  # noqa: E402
 
-CHUNKS_DIR = Path("D:/Honeywell-env/run1/chunks")
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
+CHUNKS_DIR = RUN_DIR / "chunks"
 
 # A few different real windows, not synthetic data: last 2 chunks, last 3, all 5.
 TEST_WINDOWS = {

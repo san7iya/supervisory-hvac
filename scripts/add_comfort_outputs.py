@@ -11,6 +11,7 @@ Clothing/air-velocity schedule values are taken from EnergyPlus's own
 1ZoneUncontrolled_Win_ASH55_Thermal_Comfort.idf example (a working reference
 for the Fanger model), not invented.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -18,8 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from eppy.modeleditor import IDF  # noqa: E402
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
-RUN_DIR = Path("D:/Honeywell-env/run1")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
 BASELINE_IDF = RUN_DIR / "baseline.idf"
 

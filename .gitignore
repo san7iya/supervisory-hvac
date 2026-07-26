@@ -21,3 +21,7 @@ Thumbs.db
 
 # Logs
 *.log
+# Exception: this is committed evidence (program-written run capture), not a
+# throwaway debug log -- see app/dashboard.py's module docstring for why it
+# must survive a fresh clone.
+!data/run_ai_supervised_70b.log

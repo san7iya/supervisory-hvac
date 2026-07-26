@@ -1,0 +1,89 @@
+{
+  "_source": "Transcribed field-by-field from the actual captured stdout of the final validated run (LLM_PROVIDER=groq GROQ_MODEL=llama-3.3-70b-versatile, run_ai_supervised_loop.py, all 4 validation checks active) -- copied directly from that run's tool output, not reconstructed from memory afterward. No log FILE was written to disk by that run itself -- logging is stdout-only by design (see docs/architecture-notes.md) -- which is the real provenance gap: this JSON's source is a captured terminal transcript, not a program-written artifact. Verified complete and accurate against that transcript line-by-line on 2026-07-26 (found and fixed one omission: the proposal_window field on each chunk had been dropped from the first transcription pass). For stronger provenance than a transcript diff can offer, the run can be repeated with stdout redirected to a real log file (`python scripts/run_ai_supervised_loop.py > run.log`) -- not yet done, since the original run's exact LLM outputs cannot be re-obtained verbatim (LLM responses are not guaranteed deterministic across calls), only reproduced in pattern. If the underlying run is ever re-executed, this file should be regenerated from that log file directly rather than re-transcribed by hand.",
+  "run_metadata": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "baseline_heating_c": 21.11,
+    "baseline_cooling_c": 23.89,
+    "min_deadband_c": 1.0,
+    "cumulative_cap_c": 2.5
+  },
+  "chunks": [
+    {
+      "chunk": 1,
+      "window": "01/01-01/07",
+      "current_setpoint_c": 21.11,
+      "field": "heating_setpoint",
+      "direction": "raise",
+      "magnitude": "medium",
+      "proposal_window": "09:00-17:00",
+      "reasoning": "The current average PMV is -1.10, indicating that the zone is too cold. To improve comfort, the heating setpoint should be raised.",
+      "status": "accepted",
+      "check_that_decided": "all_4_checks_passed",
+      "reason": "direction consistent with too-cold PMV; range clamp not needed (22.61C in [18,26]); deadband ok (heating 22.61C vs cooling 23.89C, gap=1.28C); cumulative cap ok (+1.5C from 21.11C baseline, within +-2.5C)",
+      "applied_value_c": 22.61
+    },
+    {
+      "chunk": 2,
+      "window": "01/08-01/14",
+      "current_setpoint_c": 22.61,
+      "field": "heating_setpoint",
+      "direction": "raise",
+      "magnitude": "medium",
+      "proposal_window": "08:00-17:00",
+      "reasoning": "The zone is too cold, as indicated by a negative PMV, so the heating setpoint should be raised to improve comfort.",
+      "status": "rejected",
+      "check_that_decided": "deadband",
+      "reason": "would violate minimum 1.0C deadband: heating 24.11C vs cooling 23.89C (gap=-0.22C)",
+      "applied_value_c": null
+    },
+    {
+      "chunk": 3,
+      "window": "01/15-01/21",
+      "current_setpoint_c": 22.61,
+      "field": "heating_setpoint",
+      "direction": "raise",
+      "magnitude": "medium",
+      "proposal_window": "09:00-17:00",
+      "reasoning": "The zone is too cold, as indicated by the negative PMV values, so the heating setpoint should be raised to improve comfort.",
+      "status": "rejected",
+      "check_that_decided": "deadband",
+      "reason": "would violate minimum 1.0C deadband: heating 24.11C vs cooling 23.89C (gap=-0.22C)",
+      "applied_value_c": null
+    },
+    {
+      "chunk": 4,
+      "window": "01/22-01/28",
+      "current_setpoint_c": 22.61,
+      "field": "heating_setpoint",
+      "direction": "raise",
+      "magnitude": "medium",
+      "proposal_window": "09:00-17:00",
+      "reasoning": "The zone is consistently too cold, as indicated by the negative PMV values, so the heating setpoint should be raised to improve comfort.",
+      "status": "rejected",
+      "check_that_decided": "deadband",
+      "reason": "would violate minimum 1.0C deadband: heating 24.11C vs cooling 23.89C (gap=-0.22C)",
+      "applied_value_c": null
+    },
+    {
+      "chunk": 5,
+      "window": "01/29-01/31",
+      "current_setpoint_c": 22.61,
+      "field": "heating_setpoint",
+      "direction": "raise",
+      "magnitude": "medium",
+      "proposal_window": "09:00-17:00",
+      "reasoning": "The zone is consistently too cold, with negative PMV values across all chunks, so the heating setpoint should be raised to improve comfort.",
+      "status": "rejected",
+      "check_that_decided": "deadband",
+      "reason": "would violate minimum 1.0C deadband: heating 24.11C vs cooling 23.89C (gap=-0.22C)",
+      "applied_value_c": null
+    }
+  ],
+  "diagnostic_report_link": {
+    "note": "The deadband rejections above (chunks 2-5) all fire at the exact same setpoint pair (heating 24.11C, cooling 23.89C) that was confirmed, via standalone reproduction, to cause a real deterministic fatal EnergyPlus error (DualSetPointWithDeadBand) before this check existed.",
+    "error": "** Severe ** DualSetPointWithDeadBand: Effective heating set-point higher than effective cooling set-point - increase deadband if using unmixed air model",
+    "zone": "CORE_ZN",
+    "simulation_time": "01/17 06:00 - 06:15"
+  }
+}

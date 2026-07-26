@@ -4,6 +4,7 @@ no validation/rollback logic. Pure mechanical loop -- proves the plumbing
 (chunk boundaries, subprocess invocation, output parsing, cumulative state)
 before any reasoning gets added on top of it.
 """
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -16,8 +17,8 @@ from supervisory_hvac.chunker import chunk_dates, set_run_period  # noqa: E402
 from supervisory_hvac.eplus_runner import EnergyPlusFailed, EnergyPlusTimeout, run_energyplus  # noqa: E402
 from supervisory_hvac.metrics import total_facility_kwh  # noqa: E402
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
-RUN_DIR = Path("D:/Honeywell-env/run1")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
 BASELINE_IDF = RUN_DIR / "baseline.idf"
 WEATHER = RUN_DIR / "weather.epw"

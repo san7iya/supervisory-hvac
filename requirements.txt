@@ -1,0 +1,5 @@
+eppy==0.5.69
+requests==2.34.2
+plotly==6.9.0
+streamlit==1.60.0
+mcp==1.28.1

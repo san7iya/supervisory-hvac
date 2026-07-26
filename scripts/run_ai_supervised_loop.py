@@ -19,6 +19,7 @@ notes for the full reasoning):
     unlike Milestone 3.
   - LLM context is a trailing window of the last LLM_CONTEXT_WINDOW chunks.
 """
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -35,8 +36,8 @@ from supervisory_hvac.metrics import average_pmv, total_facility_kwh  # noqa: E4
 from supervisory_hvac.validation import RejectedAction, ValidatedAction, validate_proposal  # noqa: E402
 from supervisory_hvac.window_summary import summarize_chunks  # noqa: E402
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
-RUN_DIR = Path("D:/Honeywell-env/run1")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
 BASELINE_IDF = RUN_DIR / "baseline.idf"
 WEATHER = RUN_DIR / "weather.epw"
@@ -139,7 +140,7 @@ def main() -> None:
         result = propose_setpoint_adjustment(summary)
 
         if isinstance(result, RejectedProposal):
-            print(f"[VALIDATION] REJECT (schema) reason={result.reason!r} -- keeping last valid schedule")
+            print(f"[VALIDATION] REJECT ({result.failure_type}) reason={result.reason!r} -- keeping last valid schedule")
             continue
 
         proposal: Proposal = result

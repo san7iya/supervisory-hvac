@@ -6,14 +6,15 @@ Not the orchestrator, not the validation layer -- just proving the eppy
 mechanics work in isolation before anything else is built on top of it.
 """
 import csv
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
 from eppy.modeleditor import IDF
 
-EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
-RUN_DIR = Path("D:/Honeywell-env/run1")
+EPLUS_DIR = Path(os.environ.get("EPLUS_DIR", "D:/EnergyPlusV25-1-0"))
+RUN_DIR = Path(os.environ.get("RUN_DIR", "D:/Honeywell-env/run1"))
 IDD_PATH = EPLUS_DIR / "Energy+.idd"
 BASELINE_IDF = RUN_DIR / "baseline.idf"
 WEATHER = RUN_DIR / "weather.epw"

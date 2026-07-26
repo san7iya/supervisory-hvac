@@ -174,8 +174,7 @@ st.error(
     f"Every rejected proposal here hit: *{deadband_detail}*. Confirmed via standalone "
     f"reproduction to trigger a deterministic **DualSetPointWithDeadBand fatal error** "
     f"{crash_line}. "
-    f"This run: **zero EnergyPlus crashes**, because the check caught it before EnergyPlus ever ran.",
-    icon="🛑",
+    f"This run: **zero EnergyPlus crashes**, because the check caught it before EnergyPlus ever ran."
 )
 if crash_evidence:
     with st.expander("Full crash evidence (live-read from EnergyPlus's own output file)"):
@@ -200,9 +199,9 @@ with chart_col1:
     fig_kwh.add_trace(go.Scatter(x=chunk_labels, y=ai_kwh, name="AI-supervised",
                                   mode="lines+markers", line=dict(color=COLOR_AI, width=2),
                                   marker=dict(size=8)))
-    fig_kwh.update_layout(title="Facility electricity per chunk (kWh)", height=340,
-                           margin=dict(t=40, b=20, l=10, r=10),
-                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    fig_kwh.update_layout(title="Facility electricity per chunk (kWh)", height=380,
+                           margin=dict(t=60, b=60, l=10, r=10),
+                           legend=dict(orientation="h", yanchor="top", y=-0.22, x=0))
     st.plotly_chart(fig_kwh, use_container_width=True)
 
 with chart_col2:
@@ -215,9 +214,9 @@ with chart_col2:
                                   marker=dict(size=8)))
     fig_pmv.add_hline(y=-0.5, line_dash="dot", line_color="#898781",
                        annotation_text="too-cold threshold", annotation_font_size=10)
-    fig_pmv.update_layout(title="Avg occupied-zone PMV per chunk", height=340,
-                           margin=dict(t=40, b=20, l=10, r=10),
-                           legend=dict(orientation="h", yanchor="bottom", y=1.02))
+    fig_pmv.update_layout(title="Avg occupied-zone PMV per chunk", height=380,
+                           margin=dict(t=60, b=60, l=10, r=10),
+                           legend=dict(orientation="h", yanchor="top", y=-0.22, x=0))
     st.plotly_chart(fig_pmv, use_container_width=True)
 
 st.divider()
@@ -233,7 +232,7 @@ st.caption(f"Parsed live from data/run_ai_supervised_70b.log -- a real, program-
 
 for c in decision_chunks:
     is_accepted = c.get("status") == "accepted"
-    badge = "✅ ACCEPTED" if is_accepted else "❌ REJECTED"
+    badge = "ACCEPTED" if is_accepted else "REJECTED"
     with st.container(border=True):
         top = st.columns([1, 2, 5])
         top[0].markdown(f"**Chunk {c['chunk']}**")

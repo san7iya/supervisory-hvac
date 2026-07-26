@@ -13,11 +13,12 @@ duplicate it).
 
 ## Setup
 
-**EnergyPlus.** Version 25.1.0. The scripts assume it's installed at
-`D:\EnergyPlusV25-1-0` (see `EPLUS_DIR` at the top of each script in `scripts/`) --
-edit that constant if your install lives elsewhere. They also assume a working
-directory at `D:\Honeywell-env\run1\` (`RUN_DIR`) containing `baseline.idf` and
-`weather.epw` before anything is run.
+**EnergyPlus.** Version 25.1.0. Scripts default to `D:\EnergyPlusV25-1-0`
+(`EPLUS_DIR`) for the install and `D:\Honeywell-env\run1\` (`RUN_DIR`) for the
+working directory -- containing `baseline.idf` and `weather.epw` before
+anything is run. Both default from the `EPLUS_DIR`/`RUN_DIR` environment
+variables if set, so a different machine just needs those exported, not a
+source edit; the defaults above apply if you leave them unset.
 
 **Python.** 3.10. Install dependencies from `requirements.txt`:
 
@@ -57,6 +58,10 @@ python scripts/run_ai_supervised_loop.py > data/run_ai_supervised_70b.log 2>&1
 
 # 3. Dashboard
 streamlit run app/dashboard.py
+
+# 4. MCP server round-trip test (optional -- proves the MCP wrapper against
+#    real evidence data; not wired into the orchestration loop above)
+LLM_PROVIDER=groq PYTHONPATH=src python scripts/test_mcp_server.py
 ```
 
 Two things worth knowing before step 3 surprises you:
@@ -80,18 +85,28 @@ src/supervisory_hvac/   Core library
   chunker.py             date-range chunking + RunPeriod field edits
   eplus_runner.py         subprocess wrapper around energyplus.exe
   idf_edit.py            whitelisted (object, field) setpoint writes -- only module that touches the IDF
-  llm_reasoning.py       LLM proposal via native tool-calling (Ollama / Groq)
+  llm_reasoning.py       LLM proposal via native tool-calling (Ollama / Groq); classifies a
+                          failed proposal's failure_type (transient_network, non_transient_4xx,
+                          tool_call_malformed, config_error, schema_invalid) so a request that
+                          never reached validation is distinguishable from a validation rejection
   validation.py          the 4-check guardrail layer between proposal and execution
   metrics.py             kWh / PMV extraction from EnergyPlus CSV output
   window_summary.py      builds the trailing-chunk text summary fed to the LLM
-  log_parser.py          parses run_ai_supervised_loop.py's stdout log for the dashboard
+  log_parser.py          parses run_ai_supervised_loop.py's stdout log for the dashboard,
+                          including the failure_type tag on rejected/failed proposals
   env.py                 minimal .env loader
+  mcp_server.py          MCP server exposing 5 core tools (get_zone_temps, get_energy_kwh,
+                          get_pmv_comfort, propose_setpoint_adjustment, validate_proposal) as
+                          thin wrappers over the functions above; not wired into the
+                          orchestration loop
 
 scripts/                Entry points and one-off proof scripts
   run_chunked_baseline.py   generates the baseline comparison series
   run_ai_supervised_loop.py the main loop (chunk -> reason -> validate -> apply)
   run_chunked_loop.py       earlier no-AI plumbing proof, superseded by the above
   add_comfort_outputs.py    adds PMV Output:Variable requests to an IDF
+  test_mcp_server.py        in-memory MCP client/server round-trip test, verified against
+                             real evidence data
   test_*.py                 manual verification scripts (not pytest), run directly
 
 app/
@@ -148,11 +163,8 @@ is what stopped four other edits from crashing the simulation outright.
   (`HTGSETP_SCH_NO_OPTIMUM`, `CLGSETP_SCH_NO_OPTIMUM`), covering `Core_ZN`,
   `Perimeter_ZN_1`, `Perimeter_ZN_3`, and `Perimeter_ZN_4`; `Perimeter_ZN_2` runs
   on a separate schedule not in scope.
-- **EnergyPlus paths and the run directory are hardcoded constants** in each
-  script (`EPLUS_DIR`, `RUN_DIR`), not environment variables or config -- running
-  on a different machine means editing those constants directly.
-- **No `requirements.txt` or `.env.example` in the repo yet** -- see Setup above
-  for what to install/configure manually until those are added.
+- **No `.env.example` in the repo yet** -- see Setup above for the one variable
+  it would need to document (`GROQ_API_KEY`).
 
 ## Links
 

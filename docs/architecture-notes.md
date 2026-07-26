@@ -127,3 +127,82 @@ code doing exact-string column lookups against `eplusout.csv` headers will
 silently break on whichever column happens to be last. Prefer substring/
 prefix matching over exact-key lookups against EnergyPlus CSV headers for
 this reason.
+
+## The PMV-sign inversion: the concrete failure case Section 5's validation layer exists to catch (Milestone 4)
+
+This is the most important finding in the build so far -- not because a
+small model misreading a sign is surprising, but because it's a
+reproducible, real example of exactly the failure category Section 5
+argues for defending against, with the model's own backwards reasoning on
+record verbatim. Also, not incidentally, this is the "one visible
+rejection moment" Section 12 wants for the demo video.
+
+**Setup:** `scripts/test_llm_reasoning.py` run against `llama-3.1-8b-instant`
+via Groq (the Section 8 cloud fallback -- used because Ollama's local pull
+was blocked on slow CDN throughput, see below), fed real window summaries
+built from Milestone 3's actual chunk outputs (`summarize_chunks()`, real
+kWh/PMV/temp data, no synthetic inputs). Three independent calls, three
+different windows (last-2, last-3, all-5 chunks). All three produced
+schema-valid tool calls -- 100% structural success. All three were
+*substantively wrong* in the same way:
+
+```
+Window: last_2_chunks (chunk_04, chunk_05) -- avg PMV -1.05, -1.21 (both "too cold")
+  Proposal: heating_setpoint -> 20.0C  (current occupied setpoint: 21.11C -- COLDER)
+  Reasoning (verbatim): "Adjust heating setpoint to reduce energy consumption and
+  increase comfort based on recent simulated data showing low PMV values and
+  relatively cool occupied-zone temperatures"
+
+Window: last_3_chunks (chunk_03..05) -- avg PMV -0.92, -1.05, -1.21 (all "too cold")
+  Proposal: heating_setpoint -> 18.3C  (COLDER)
+  Reasoning (verbatim): "The office has experienced cooler than normal recent
+  temperatures and higher energy consumption suggesting a potential heating setback."
+
+Window: all_5_chunks -- avg PMV -1.10, -1.03, -0.92, -1.05, -1.21 (all "too cold")
+  Proposal: heating_setpoint -> 17.9C  (COLDER, most extreme)
+  Reasoning (verbatim): "The energy used has decreased by 59.8% and the comfort
+  level has increased with a more negative PMV value in the recent simulated
+  chunks. This indicates a potential opportunity for reducing the heating
+  setpoint without impacting occupancy comfort, suggesting a temperature decrease."
+```
+
+**The error, precisely:** on the Fanger 7-point scale, more-negative PMV
+means *colder*, not more comfortable. The third proposal's reasoning states
+the opposite ("comfort level has increased with a more negative PMV value")
+and uses that inverted premise to justify dropping the setpoint further --
+while the zone was already measurably too cold in every single one of these
+windows. All three calls moved the heating setpoint in the same wrong
+direction, independent of window size -- this isn't a one-off fluke from a
+single unlucky call.
+
+**Why range clamping alone doesn't fix this** (discussed with the user
+before building Milestone 5): a tighter numeric band only catches "the
+number is absurd." An in-range proposal (e.g. 18.5C) built on the exact same
+backwards reasoning sails through any range check untouched. Range clamping
+and correctness are orthogonal -- clamping bounds the blast radius of a bad
+number, it cannot detect that a well-formed, in-range number is wrong for
+the stated reason.
+
+**What actually catches this class of failure:** a directional-consistency
+check -- if the current window's observed PMV already indicates the zone is
+outside comfort bounds in a known direction, any proposal must move the
+relevant setpoint in the corrective direction, not away from it. This is
+checkable in a few lines against data already present in every window
+summary; it requires no semantic understanding of *why* the model was
+wrong, only that the proposed *action* is consistent with the observed
+*state*. Built in Milestone 5 as a second, independent gate alongside the
+range clamp: range clamp catches "absurd," directional-consistency catches
+"backwards." The reasoning-text log remains a third line of defense for
+subtler cases neither structural check can catch.
+
+**Open question, not blocking:** this test used Groq's `llama-3.1-8b-instant`
+(the Section 8 fallback), not the Ollama-hosted Qwen2.5-7B-Instruct primary
+path -- Ollama's model pull was measured at ~36 KB/s sustained against its
+actual blob host (Cloudflare R2), confirmed via raw `curl` bypassing the
+`ollama` client entirely, i.e. a real CDN/network issue, not a client bug.
+Once the local pull finishes, rerun against the primary model to learn
+whether the PMV-sign confusion is a small-model-in-general failure mode (in
+which case the directional check is load-bearing on both provider paths) or
+specific to this particular model. Doesn't change Milestone 5's design
+either way -- the check is provider-agnostic by construction -- but worth
+having the data.

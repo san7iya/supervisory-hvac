@@ -185,12 +185,6 @@ weather file's warmest conditions instead of January):
 
 ## Known limitations
 
-- **Cooling-path validation is now confirmed against real LLM output** (July 2026
-  warm-season run, `data/run_ai_supervised_70b_july.log`) -- a real cooling-direction
-  proposal was accepted (chunk 2, PMV +0.06 -> cooling setpoint lowered), and the
-  deadband check correctly rejected a later proposal approaching the same fatal
-  setpoint pair from the cooling-moved side (chunk 4), mirroring January's
-  crash-preventing rejection from the heating side.
 - **The cumulative-movement cap (±2.5C) has never been tripped by real data.** No
   real run has moved a field far enough from baseline to approach it; the only
   evidence it works is the synthetic test case built to isolate it from the
@@ -211,6 +205,5 @@ weather file's warmest conditions instead of January):
 - Architecture doc: [docs/architecture-doc.md](docs/architecture-doc.md) (distilled
   1-2 page report -- tool-calling architecture, prompt engineering strategy, latency
   management, log handling). Full build log and reasoning: [docs/architecture-notes.md](docs/architecture-notes.md).
-- Dashboard: run locally via `streamlit run app/dashboard.py` (**TODO**: hosted link,
-  if any)
-- Demo video: **TODO**
+- Dashboard: run locally via `streamlit run app/dashboard.py` 
+- Demo video: [view here](https://drive.google.com/file/d/1DD-nEiIArgp-sVMp0m7_lHlVacIUA7FQ/view?usp=sharing)

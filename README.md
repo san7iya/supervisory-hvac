@@ -7,9 +7,10 @@ and a separate Python validation layer -- range clamp, directional-consistency,
 deadband, and cumulative-movement checks -- decides whether that proposal is actually
 applied before the next chunk runs. The LLM never touches the IDF directly; it can
 only produce a structured proposal that the validation boundary either passes through
-or rejects. See [docs/architecture-notes.md](docs/architecture-notes.md) for the full
-build log and the reasoning behind each design decision (this README doesn't
-duplicate it).
+or rejects. See [docs/architecture-doc.md](docs/architecture-doc.md) for the short
+distilled architecture report, or [docs/architecture-notes.md](docs/architecture-notes.md)
+for the full build log and the reasoning behind each design decision (this README
+doesn't duplicate either).
 
 ## Setup
 
@@ -192,9 +193,9 @@ weather file's warmest conditions instead of January):
 
 ## Links
 
-- Architecture doc: [docs/architecture-notes.md](docs/architecture-notes.md) (running
-  build log; a distilled 1-2 page architecture doc is referenced in it as a planned
-  Section 12 output -- **TODO**, not yet a separate file)
+- Architecture doc: [docs/architecture-doc.md](docs/architecture-doc.md) (distilled
+  1-2 page report -- tool-calling architecture, prompt engineering strategy, latency
+  management, log handling). Full build log and reasoning: [docs/architecture-notes.md](docs/architecture-notes.md).
 - Dashboard: run locally via `streamlit run app/dashboard.py` (**TODO**: hosted link,
   if any)
 - Demo video: **TODO**

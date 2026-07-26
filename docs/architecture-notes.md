@@ -1,8 +1,8 @@
 # Architecture notes (running log)
 
 Captured during the build, in the order decisions/evidence actually showed up.
-This feeds the final 1-2 page architecture doc (Section 12) -- raw reasoning
-here, distilled prose there.
+This feeds [architecture-doc.md](architecture-doc.md), the distilled 1-2 page
+report -- raw reasoning here, distilled prose there.
 
 ## Why the field whitelist must key on field name/position, not value (Milestone 2)
 

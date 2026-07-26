@@ -25,3 +25,4 @@ Thumbs.db
 # throwaway debug log -- see app/dashboard.py's module docstring for why it
 # must survive a fresh clone.
 !data/run_ai_supervised_70b.log
+!data/run_ai_supervised_70b_july.log

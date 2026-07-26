@@ -114,7 +114,9 @@ app/
 
 data/
   evidence/                committed CSV snapshots the dashboard actually reads
-  run_ai_supervised_70b.log   real captured stdout from the documented run
+  run_ai_supervised_70b.log   real captured stdout from the documented Jan run
+  run_ai_supervised_70b_july.log   real captured stdout from the July warm-season run
+                               (cooling-path validation, see Current results below)
   decision_log_70b.json       earlier hand-transcription; kept for provenance, not read by the dashboard
 
 docs/
@@ -144,13 +146,35 @@ These are energy-cost and comfort-improvement numbers together, not a pure savin
 result -- the accepted edit traded electricity for comfort, and the validation layer
 is what stopped four other edits from crashing the simulation outright.
 
+### July warm-season run (cooling-path validation)
+
+A second, independent real-data run, from `data/run_ai_supervised_70b_july.log`
+(same model and provider, same 5-chunk/7-day structure, Jul 1-31 against the
+weather file's warmest conditions instead of January):
+
+- **Total facility electricity: +0.70%** (3,451.1 kWh baseline -> 3,475.4 kWh
+  AI-supervised). Smaller than January's delta and blended across three accepted
+  proposals (two heating raises, one cooling lower) rather than one -- by design,
+  not a shortcoming: it reflects the system responding proportionately to actual
+  seasonal conditions instead of a single cherry-picked edit.
+- **First real cooling-direction proposal (chunk 2):** avg PMV read +0.06 (warm),
+  the model proposed lowering the cooling setpoint, and it passed both the
+  directional-consistency and deadband checks on real (not synthetic) LLM output --
+  applied, 23.89C -> 23.39C.
+- **Deadband check confirmed from the cooling-moved side (chunk 4):** a later
+  heating-raise proposal was rejected for landing within the minimum 1.0C deadband
+  of the now-lowered cooling setpoint (23.61C vs 23.39C) -- the same fatal
+  setpoint-pair shape January's run caught from the heating side, this time
+  triggered by cooling having moved instead.
+
 ## Known limitations
 
-- **Only the heating_setpoint path is validated end-to-end against a real run.**
-  The whitelist and validation code handle `cooling_setpoint` symmetrically, but
-  in every real run so far the model has only ever proposed raising the heating
-  setpoint -- the cooling path has only been exercised by synthetic test cases
-  (`scripts/test_validation_deadband_cap.py`), not real LLM output.
+- **Cooling-path validation is now confirmed against real LLM output** (July 2026
+  warm-season run, `data/run_ai_supervised_70b_july.log`) -- a real cooling-direction
+  proposal was accepted (chunk 2, PMV +0.06 -> cooling setpoint lowered), and the
+  deadband check correctly rejected a later proposal approaching the same fatal
+  setpoint pair from the cooling-moved side (chunk 4), mirroring January's
+  crash-preventing rejection from the heating side.
 - **The cumulative-movement cap (±2.5C) has never been tripped by real data.** No
   real run has moved a field far enough from baseline to approach it; the only
   evidence it works is the synthetic test case built to isolate it from the

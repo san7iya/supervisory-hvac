@@ -23,7 +23,9 @@ _VALIDATION_REJECT = re.compile(
 # it's an exact classification, not a guess. Older logs (e.g. data/run_ai_supervised_70b.log)
 # predate this and always wrote the literal tag "schema" regardless of true cause, so those
 # still fall through to _classify_rejection() for backward-compatible parsing.
-_KNOWN_FAILURE_TYPES = {"transient_network", "non_transient_4xx", "tool_call_malformed", "schema_invalid"}
+_KNOWN_FAILURE_TYPES = {
+    "transient_network", "non_transient_4xx", "tool_call_malformed", "schema_invalid", "config_error",
+}
 _APPLIED_ACTION = re.compile(r"\[APPLIED_ACTION\] \S+ -> ([\d.]+)C")
 
 

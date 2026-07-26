@@ -19,11 +19,10 @@ edit that constant if your install lives elsewhere. They also assume a working
 directory at `D:\Honeywell-env\run1\` (`RUN_DIR`) containing `baseline.idf` and
 `weather.epw` before anything is run.
 
-**Python.** 3.10. No `requirements.txt` exists yet in this repo -- it should be
-added; in the meantime, install what's actually imported:
+**Python.** 3.10. Install dependencies from `requirements.txt`:
 
 ```
-pip install eppy requests pandas plotly streamlit
+pip install -r requirements.txt
 ```
 
 **LLM provider.** Set via the `LLM_PROVIDER` env var:

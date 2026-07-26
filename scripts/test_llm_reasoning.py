@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from honeywell.llm_reasoning import Proposal, RejectedProposal, propose_setpoint_adjustment  # noqa: E402
-from honeywell.window_summary import summarize_chunks  # noqa: E402
+from supervisory_hvac.llm_reasoning import Proposal, RejectedProposal, propose_setpoint_adjustment  # noqa: E402
+from supervisory_hvac.window_summary import summarize_chunks  # noqa: E402
 
 CHUNKS_DIR = Path("D:/Honeywell-env/run1/chunks")
 

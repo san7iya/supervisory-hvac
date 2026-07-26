@@ -12,9 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from eppy.modeleditor import IDF  # noqa: E402
 
-from honeywell.chunker import chunk_dates, set_run_period  # noqa: E402
-from honeywell.eplus_runner import EnergyPlusFailed, EnergyPlusTimeout, run_energyplus  # noqa: E402
-from honeywell.metrics import total_facility_kwh  # noqa: E402
+from supervisory_hvac.chunker import chunk_dates, set_run_period  # noqa: E402
+from supervisory_hvac.eplus_runner import EnergyPlusFailed, EnergyPlusTimeout, run_energyplus  # noqa: E402
+from supervisory_hvac.metrics import total_facility_kwh  # noqa: E402
 
 EPLUS_DIR = Path("D:/EnergyPlusV25-1-0")
 RUN_DIR = Path("D:/Honeywell-env/run1")

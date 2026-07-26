@@ -114,6 +114,7 @@ app/
   dashboard.py            Streamlit results dashboard (baseline vs AI, decision log)
 
 data/
+  idf/                     committed IDF files -- see "IDF files" note below
   evidence/                committed CSV snapshots the dashboard actually reads
   run_ai_supervised_70b.log   real captured stdout from the documented Jan run
   run_ai_supervised_70b_july.log   real captured stdout from the July warm-season run
@@ -123,6 +124,20 @@ data/
 docs/
   architecture-notes.md   running build log (decisions + evidence, in the order they showed up)
 ```
+
+**IDF files.** `RUN_DIR` is scratch space wiped on every run (see above), so the
+actual `.idf` files behind the documented results are committed separately under
+`data/idf/`:
+- `baseline.idf` -- the true unmodified original (heating 21.11C / cooling 23.89C),
+  copied as-is from a run's `RUN_DIR`.
+- `july_final.idf` -- the July run's final state (heating 22.11C / cooling 23.39C,
+  matching the July results below), also copied as-is; `RUN_DIR` still held it
+  untouched since that run.
+- `january_final.idf` -- the January run's final state (heating 22.61C, cooling
+  untouched at baseline 23.89C). `RUN_DIR`'s January-run artifact no longer existed
+  (overwritten by the later July run), so this one is reconstructed: `baseline.idf`
+  run through `idf_edit.py`'s real `apply_action()` with the one accepted edit from
+  `data/run_ai_supervised_70b.log`'s `[APPLIED_ACTION]` line, not hand-edited.
 
 ## Current results
 
